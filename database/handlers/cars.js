@@ -1,34 +1,93 @@
-const { run, all } = require('../db')
+// @ts-nocheck
+const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path')
+const { initDB } = require('./../db.js')
+const { seedDatabase } = require('./../seed')
+const carHandlers = require('./../handlers/cars.js')
+const importHandlers = require('./../handlers/imports')
+const exportHandlers = require('./../handlers/exports')
 
-async function getAllMakes() {
-    return all('SELECT * FROM makes ORDER BY name')
+function createWindow() {
+    const win = new BrowserWindow({
+        width: 1280,
+        height: 800,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+        }
+    })
+
+    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+        win.loadURL('http://localhost:5173')
+        win.webContents.openDevTools()
+    } else {
+        win.loadFile(path.join(__dirname, '../renderer/dist/index.html'))
+    }
 }
 
-async function createMake(name) {
-    const slug = name.toLowerCase().replace(/\s+/g, '_')
-    return run('INSERT OR IGNORE INTO makes(name, slug) VALUES(?,?)', [name, slug])
-}
+app.whenReady().then(async function() {
 
-async function getModelsByMake(makeId) {
-    return all('SELECT * FROM models WHERE make_id = ? ORDER BY name', [makeId])
-}
+    await seedDatabase()
+    setupIPC()
+    createWindow()
+})
 
-async function createModel({ makeId, name, vehicleType = 'car' }) {
-    return run(
-        'INSERT OR IGNORE INTO models(make_id, name, vehicle_type) VALUES(?,?,?)', [makeId, name, vehicleType]
-    )
-}
+app.on('window-all-closed', function() {
+    if (process.platform !== 'darwin') app.quit()
+})
 
-async function getSubmodelsByModel(modelId) {
-    return all('SELECT * FROM submodels WHERE model_id = ? ORDER BY name', [modelId])
-}
+function setupIPC() {
+    // ── Cars ──────────────────────────────────────────────
+    ipcMain.handle('cars:getAll', async function(e, filters) {
+        return await carHandlers.getAllCars(filters)
+    })
+    ipcMain.handle('cars:getById', async function(e, id) {
+        return await carHandlers.getCarById(id)
+    })
+    ipcMain.handle('cars:create', async function(e, data) {
+        return await carHandlers.createCar(data)
+    })
+    ipcMain.handle('cars:update', async function(e, id, data) {
+        return await carHandlers.updateCar(id, data)
+    })
+    ipcMain.handle('cars:delete', async function(e, id) {
+        return await carHandlers.deleteCar(id)
+    })
+    ipcMain.handle('cars:search', async function(e, filters) {
+        return await carHandlers.searchCars(filters)
+    })
 
-async function createSubmodel({ modelId, name, parentId = null, yearFrom, yearTo, engineCc, powerCv, fuelType, gearbox }) {
-    return run(
-        `INSERT OR IGNORE INTO submodels
-     (model_id, parent_id, name, year_from, year_to, engine_cc, power_cv, fuel_type, gearbox)
-     VALUES(?,?,?,?,?,?,?,?,?)`, [modelId, parentId, name, yearFrom, yearTo, engineCc, powerCv, fuelType, gearbox]
-    )
-}
+    // ── Makes & Models ────────────────────────────────────
+    ipcMain.handle('makes:getAll', async function() {
+        return await carHandlers.getMakes()
+    })
+    ipcMain.handle('models:getByMake', async function(e, makeId) {
+        return await carHandlers.getModels(makeId)
+    })
+    ipcMain.handle('submodels:getByModel', async function(e, modelId) {
+        return await carHandlers.getSubmodels(modelId)
+    })
 
-module.exports = { getAllMakes, createMake, getModelsByMake, createModel, getSubmodelsByModel, createSubmodel }
+    // ── Import ────────────────────────────────────────────
+    ipcMain.handle('import:pickCSV', async function(e) {
+        const win = BrowserWindow.getFocusedWindow()
+        return await importHandlers.pickCSV(win)
+    })
+    ipcMain.handle('import:previewCSV', async function(e, filePath) {
+        return await importHandlers.previewCSV(filePath)
+    })
+    ipcMain.handle('import:importCSV', async function(e, filePath, mapping) {
+        return await importHandlers.importCSV(filePath, mapping)
+    })
+
+    // ── Export ────────────────────────────────────────────
+    ipcMain.handle('export:pdf', async function(e, ids) {
+        const win = BrowserWindow.getFocusedWindow()
+        return await exportHandlers.exportPDF(win, ids)
+    })
+    ipcMain.handle('export:excel', async function(e, ids) {
+        const win = BrowserWindow.getFocusedWindow()
+        return await exportHandlers.exportExcel(win, ids)
+    })
+}

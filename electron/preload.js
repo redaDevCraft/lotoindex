@@ -1,33 +1,25 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('db', {
-    // Makes / Models / Submodels
-    getMakes: () => ipcRenderer.invoke('makes:getAll'),
-    createMake: (name) => ipcRenderer.invoke('makes:create', name),
-    getModels: (makeId) => ipcRenderer.invoke('models:getByMake', makeId),
-    createModel: (data) => ipcRenderer.invoke('models:create', data),
-    getSubmodels: (modelId) => ipcRenderer.invoke('submodels:getByModel', modelId),
-    createSubmodel: (data) => ipcRenderer.invoke('submodels:create', data),
-
     // Cars
-    searchCars: (filters) => ipcRenderer.invoke('cars:search', filters),
-    getAllCars: () => ipcRenderer.invoke('cars:getAll'),
-    getCarById: (id) => ipcRenderer.invoke('cars:getById', id),
-    createCar: (data) => ipcRenderer.invoke('cars:create', data),
-    updateCar: (id, data) => ipcRenderer.invoke('cars:update', id, data),
-    deleteCar: (id) => ipcRenderer.invoke('cars:delete', id),
+    getAllCars: function(filters) { return ipcRenderer.invoke('cars:getAll', filters) },
+    getCarById: function(id) { return ipcRenderer.invoke('cars:getById', id) },
+    createCar: function(data) { return ipcRenderer.invoke('cars:create', data) },
+    updateCar: function(id, data) { return ipcRenderer.invoke('cars:update', id, data) },
+    deleteCar: function(id) { return ipcRenderer.invoke('cars:delete', id) },
+    searchCars: function(filters) { return ipcRenderer.invoke('cars:search', filters) },
 
-    // Images
-    addImages: (carId, paths) => ipcRenderer.invoke('images:add', carId, paths),
-    deleteImage: (id) => ipcRenderer.invoke('images:delete', id),
-    getImages: (carId) => ipcRenderer.invoke('images:getByCard', carId),
+    // Makes & Models
+    getMakes: function() { return ipcRenderer.invoke('makes:getAll') },
+    getModels: function(makeId) { return ipcRenderer.invoke('models:getByMake', makeId) },
+    getSubmodels: function(modelId) { return ipcRenderer.invoke('submodels:getByModel', modelId) },
+
+    // Import
+    pickCSV: function() { return ipcRenderer.invoke('import:pickCSV') },
+    previewCSV: function(filePath) { return ipcRenderer.invoke('import:previewCSV', filePath) },
+    importCSV: function(filePath, mapping) { return ipcRenderer.invoke('import:importCSV', filePath, mapping) },
 
     // Export
-    exportPDF: (ids) => ipcRenderer.invoke('export:pdf', ids),
-    exportExcel: (ids) => ipcRenderer.invoke('export:excel', ids),
-
-    // Import CSV
-    pickCSV: () => ipcRenderer.invoke('import:csv:pick'),
-    previewCSV: (path) => ipcRenderer.invoke('import:csv:preview', path),
-    importCSV: (path, map) => ipcRenderer.invoke('import:csv:import', path, map),
+    exportPDF: function(ids) { return ipcRenderer.invoke('export:pdf', ids) },
+    exportExcel: function(ids) { return ipcRenderer.invoke('export:excel', ids) },
 })

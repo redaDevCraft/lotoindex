@@ -1,4 +1,4 @@
-const { run, get } = require('./db')
+const { run, get } = require('./db.js')
 
 const SEED_DATA = [
     // ── European ──────────────────────────────────────────
