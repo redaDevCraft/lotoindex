@@ -33,10 +33,7 @@ export default function App() {
     await window.db.exportPDF(ids)
   }
 
-  const handleExportExcel = async () => {
-    const ids = selected.length ? selected : cars.map(c => c.id)
-    await window.db.exportExcel(ids)
-  }
+
   
 
   return (
@@ -51,7 +48,7 @@ export default function App() {
         <div className="export-section">
           <p>Exporter ({selected.length || cars.length} voitures)</p>
           <button onClick={handleExportPDF}> PDF</button>
-          <button onClick={handleExportExcel}> Excel</button>
+        
         </div>
       </aside>
 
@@ -66,9 +63,8 @@ export default function App() {
               onSelect={setSelected}
               onEdit={(car) => { setEditCar(car); setView('form') }}
               onView={(car) => { setEditCar(car); setView('detail') }}
-              onDelete={async (id) => { await window.db.deleteCar(id); loadCars()
-              
-               }}
+              onDelete={async (id) => { await window.db.deleteCar(id); loadCars() }}
+              onDeleteSelected={async (ids) => { await window.db.deleteCars(ids); setSelected([]); loadCars() }}
             />
           </>
         )}

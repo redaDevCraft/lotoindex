@@ -59,7 +59,14 @@ async function deleteCar(id) {
     await run('DELETE FROM cars_fts WHERE car_id = ?', [id])
     await run('DELETE FROM cars WHERE id = ?', [id])
 }
+async function deleteCars(ids) {
+    if (ids.length === 0) return
+    var placeholders = ids.map(() => '?').join(',')
+}
 
-async function searchCars(filters) { return await getAllCars(filters) }
+async function searchCars(filters) {
+    return await getAllCars(filters)
 
-module.exports = { getAllCars, getCarById, createCar, updateCar, deleteCar, searchCars }
+}
+
+module.exports = { getAllCars, getCarById, createCar, updateCar, deleteCar, deleteCars, searchCars }

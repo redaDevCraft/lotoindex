@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('db', {
     createCar: function(data) { return ipcRenderer.invoke('cars:create', data) },
     updateCar: function(id, data) { return ipcRenderer.invoke('cars:update', id, data) },
     deleteCar: function(id) { return ipcRenderer.invoke('cars:delete', id) },
+    deleteCars: function(ids) { return ipcRenderer.invoke('cars:deleteCars', ids) },
     searchCars: function(filters) { return ipcRenderer.invoke('cars:search', filters) },
 
     // Makes & Models
@@ -21,7 +22,6 @@ contextBridge.exposeInMainWorld('db', {
 
     // Export
     exportPDF: function(ids) { return ipcRenderer.invoke('export:pdf', ids) },
-    exportExcel: function(ids) { return ipcRenderer.invoke('export:excel', ids) },
 
     // Images
     pickImages: function() { return ipcRenderer.invoke('images:pick') },
@@ -31,4 +31,6 @@ contextBridge.exposeInMainWorld('db', {
     deleteImage: function(imgId) { return ipcRenderer.invoke('images:delete', imgId) },
     deleteAllImages: function(carId) { return ipcRenderer.invoke('images:deleteAll', carId) },
     reorderImages: function(updates) { return ipcRenderer.invoke('images:reorder', updates) },
+    previewImages: function(paths) { return ipcRenderer.invoke('images:preview', paths) },
+
 })

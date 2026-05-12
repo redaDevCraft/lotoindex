@@ -55,6 +55,12 @@ function setupIPC() {
         await imageHandlers.deleteAllCarImages(id) // ← clean images first
         return await carHandlers.deleteCar(id)
     })
+    ipcMain.handle('cars:deleteCars', async function(e, ids) {
+        for (var i = 0; i < ids.length; i++) {
+            await imageHandlers.deleteAllCarImages(ids[i]) // ← clean images first
+            await carHandlers.deleteCar(ids[i])
+        }
+    })
     ipcMain.handle('cars:search', async function(e, filters) { return await carHandlers.searchCars(filters) })
 
     // Makes — from makes.js
@@ -85,7 +91,6 @@ function setupIPC() {
 
     // Export
     ipcMain.handle('export:pdf', async function(e, ids) { return await exportHandlers.exportPDF(BrowserWindow.getFocusedWindow(), ids) })
-    ipcMain.handle('export:excel', async function(e, ids) { return await exportHandlers.exportExcel(BrowserWindow.getFocusedWindow(), ids) })
 
     // ── Images ────────────────────────────────────────────
     ipcMain.handle('images:pick', async function() { return await imageHandlers.pickImages(BrowserWindow.getFocusedWindow()) })
@@ -95,4 +100,6 @@ function setupIPC() {
     ipcMain.handle('images:delete', async function(e, imgId) { return await imageHandlers.deleteImage(imgId) })
     ipcMain.handle('images:deleteAll', async function(e, carId) { return await imageHandlers.deleteAllCarImages(carId) })
     ipcMain.handle('images:reorder', async function(e, updates) { return await imageHandlers.reorderImages(updates) })
+    ipcMain.handle('images:preview', async function(e, paths) { return await imageHandlers.previewImages(paths) })
+
 }

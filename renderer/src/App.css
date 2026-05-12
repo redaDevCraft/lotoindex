@@ -469,3 +469,53 @@ button {
     font-size: .875rem;
     font-style: italic;
 }
+
+.row-actions {
+    display: flex;
+    gap: .3rem;
+    align-items: center;
+}
+
+.row-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: .3rem;
+    border-radius: 5px;
+    color: #475569;
+}
+
+.row-actions button:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.row-actions .btn-danger {
+    color: #ef4444;
+}
+
+.row-actions .btn-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.btn-delete-selected {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: .4rem .9rem;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.btn-delete-selected:hover {
+    background: #dc2626;
+}

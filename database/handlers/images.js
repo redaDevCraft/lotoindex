@@ -99,5 +99,18 @@ async function reorderImages(updates) {
     }
     return { success: true }
 }
+async function previewImages(filePaths) {
+    return filePaths.map(function(fp) {
+        var ext = path.extname(fp).toLowerCase().replace('.', '')
+        var mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' :
+            ext === 'png' ? 'image/png' :
+            ext === 'webp' ? 'image/webp' :
+            ext === 'gif' ? 'image/gif' :
+            ext === 'bmp' ? 'image/bmp' :
+            'image/jpeg'
+        var data = fs.readFileSync(fp)
+        return 'data:' + mime + ';base64,' + data.toString('base64')
+    })
+}
 
-module.exports = { pickImages, uploadImages, getCarImages, setCover, deleteImage, deleteAllCarImages, reorderImages }
+module.exports = { pickImages, uploadImages, getCarImages, setCover, deleteImage, deleteAllCarImages, reorderImages, previewImages }
