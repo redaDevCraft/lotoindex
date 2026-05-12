@@ -4,8 +4,8 @@ const path = require('path')
 const { app } = require('electron')
 const fs = require('fs')
 
-const dbPath = path.join(app.getPath('userData'), 'lotoindex.db')
-fs.mkdirSync(path.dirname(dbPath), { recursive: true })
+const userDataPath = app.getPath('userData')
+const dbPath       = path.join(userDataPath, 'lotoindex.db')
 
 const db = new sqlite3.Database(dbPath, function(err) {
     if (err) console.error('Erreur SQLite:', err)

@@ -5,7 +5,6 @@ const { initDB } = require('../database/db')
 const { seedDatabase } = require('../database/seed')
 const carHandlers = require('../database/handlers/cars')
 const makesHandlers = require('../database/handlers/makes')
-const importHandlers = require('../database/handlers/imports')
 const exportHandlers = require('../database/handlers/exports')
 const imageHandlers = require('../database/handlers/images')
 const { protocol } = require('electron')
@@ -16,12 +15,21 @@ function createWindow() {
     var win = new BrowserWindow({
         width: 1280,
         height: 800,
+        minWidth: 900,
+        minHeight: 600,
+        show: false, // wait for ready-to-show
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         }
     })
+
+    win.once('ready-to-show', function() {
+        win.maximize() // fills screen on launch
+        win.show()
+    })
+
     if (!app.isPackaged) {
         win.loadURL('http://localhost:5173')
         win.webContents.openDevTools()
@@ -84,10 +92,6 @@ function setupIPC() {
     ipcMain.handle('submodels:update', async function(e, id, data) { return await makesHandlers.updateSubmodel(id, data) })
     ipcMain.handle('submodels:delete', async function(e, id) { return await makesHandlers.deleteSubmodel(id) })
 
-    // Import
-    ipcMain.handle('import:pickCSV', async function() { return await importHandlers.pickCSV(BrowserWindow.getFocusedWindow()) })
-    ipcMain.handle('import:previewCSV', async function(e, fp) { return await importHandlers.previewCSV(fp) })
-    ipcMain.handle('import:importCSV', async function(e, fp, map) { return await importHandlers.importCSV(fp, map) })
 
     // Export
     ipcMain.handle('export:pdf', async function(e, ids) {

@@ -1,0 +1,35 @@
+directories:
+  output: dist-app
+  buildResources: build
+appId: com.redadevcraft.lotoindex
+productName: LotoIndex
+files:
+  - filter:
+      - electron/**/*
+      - database/**/*
+      - renderer/dist/**/*
+      - index.html
+      - package.json
+extraResources:
+  - from: database/
+    to: database/
+    filter:
+      - '**/*'
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+linux:
+  target: AppImage
+  icon: assets/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  installerLanguages:
+    - fr_FR
+    - en_US
+electronVersion: 31.7.7

@@ -15,10 +15,6 @@ contextBridge.exposeInMainWorld('db', {
     getModels: function(makeId) { return ipcRenderer.invoke('models:getByMake', makeId) },
     getSubmodels: function(modelId) { return ipcRenderer.invoke('submodels:getByModel', modelId) },
 
-    // Import
-    pickCSV: function() { return ipcRenderer.invoke('import:pickCSV') },
-    previewCSV: function(filePath) { return ipcRenderer.invoke('import:previewCSV', filePath) },
-    importCSV: function(filePath, mapping) { return ipcRenderer.invoke('import:importCSV', filePath, mapping) },
 
     // Export
     exportPDF: function(ids) { return ipcRenderer.invoke('export:pdf', ids) },
