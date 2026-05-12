@@ -90,9 +90,16 @@ function setupIPC() {
     ipcMain.handle('import:importCSV', async function(e, fp, map) { return await importHandlers.importCSV(fp, map) })
 
     // Export
-    ipcMain.handle('export:pdf', async function(e, ids) { return await exportHandlers.exportPDF(BrowserWindow.getFocusedWindow(), ids) })
-
-    // ── Images ────────────────────────────────────────────
+    ipcMain.handle('export:pdf', async function(e, ids) {
+            try {
+                var win = BrowserWindow.fromWebContents(e.sender)
+                return await exportHandlers.exportPDF(win, ids)
+            } catch (err) {
+                console.error('[export:pdf] CRASH:', err)
+                return { success: false, error: String(err.message || err) }
+            }
+        })
+        // ── Images ────────────────────────────────────────────
     ipcMain.handle('images:pick', async function() { return await imageHandlers.pickImages(BrowserWindow.getFocusedWindow()) })
     ipcMain.handle('images:upload', async function(e, carId, paths) { return await imageHandlers.uploadImages(carId, paths) })
     ipcMain.handle('images:getAll', async function(e, carId) { return await imageHandlers.getCarImages(carId) })

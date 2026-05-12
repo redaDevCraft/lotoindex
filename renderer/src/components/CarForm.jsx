@@ -1,11 +1,9 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react'
 import CarImages from './CarImages'
 
 export default function CarForm({ car, makes, onSave, onCancel }) {
     const [models,            setModels]            = useState([])
     const [submodels,         setSubmodels]         = useState([])
-    const [savedId,           setSavedId]           = useState(car ? car.id : null)
     const [pendingImagePaths, setPendingImagePaths] = useState([])
     const [saving,            setSaving]            = useState(false)
     const [form, setForm] = useState({
@@ -24,9 +22,8 @@ export default function CarForm({ car, makes, onSave, onCancel }) {
                     ? Object.fromEntries(car.attributes.map(function(a) { return [a.key, a.value] }))
                     : {}
             })
-            setSavedId(car.id)
-            if (car.make_id) window.db.getModels(car.make_id).then(function(m)  { setModels(m || []) })
-            if (car.model_id) window.db.getSubmodels(car.model_id).then(function(sm) { setSubmodels(sm || []) })
+            if (car.make_id)   window.db.getModels(car.make_id).then(function(m)  { setModels(m || []) })
+            if (car.model_id)  window.db.getSubmodels(car.model_id).then(function(s) { setSubmodels(s || []) })
         }
     }, [car])
 
@@ -46,13 +43,10 @@ export default function CarForm({ car, makes, onSave, onCancel }) {
     async function handleSave() {
         setSaving(true)
         try {
-            var id = await onSave(form)
-            // Upload any images that were picked before save
+            var id = await onSave(form)  // navigates to list inside onSave
             if (id && pendingImagePaths.length > 0) {
                 await window.db.uploadImages(id, pendingImagePaths)
-                setPendingImagePaths([])
             }
-            if (id && !savedId) setSavedId(id)
         } finally {
             setSaving(false)
         }
@@ -69,27 +63,24 @@ export default function CarForm({ car, makes, onSave, onCancel }) {
                         {(makes || []).map(function(m) { return <option key={m.id} value={m.id}>{m.name}</option> })}
                     </select>
                 </label>
-
                 <label>Modèle
                     <select value={form.model_id || ''} onChange={function(e) { onModelChange(e.target.value) }}>
                         <option value="">-- Choisir --</option>
                         {models.map(function(m) { return <option key={m.id} value={m.id}>{m.name}</option> })}
                     </select>
                 </label>
-
                 <label>Sous-modèle
                     <select value={form.submodel_id || ''} onChange={function(e) { set('submodel_id', e.target.value) }}>
                         <option value="">-- Choisir --</option>
                         {submodels.map(function(s) { return <option key={s.id} value={s.id}>{s.name}</option> })}
                     </select>
                 </label>
-
                 {[
-                    ['year','Année','number'], ['vin','VIN','text'],
-                    ['registration','Immatriculation','text'], ['reg_date','Date immat.','date'],
-                    ['power_cv','Puissance (cv)','number'], ['mileage_km','Kilométrage (km)','number'],
-                    ['displacement_cc','Cylindrée (cc)','number'], ['engine_code','Code moteur','text'],
-                    ['internal_type','Type interne','text'], ['folder_ref','N° Dossier','text'],
+                    ['year','Année','number'],['vin','VIN','text'],
+                    ['registration','Immatriculation','text'],['reg_date','Date immat.','date'],
+                    ['power_cv','Puissance (cv)','number'],['mileage_km','Kilométrage (km)','number'],
+                    ['displacement_cc','Cylindrée (cc)','number'],['engine_code','Code moteur','text'],
+                    ['internal_type','Type interne','text'],['folder_ref','N° Dossier','text'],
                 ].map(function(item) {
                     return (
                         <label key={item[0]}>{item[1]}
@@ -98,36 +89,29 @@ export default function CarForm({ car, makes, onSave, onCancel }) {
                         </label>
                     )
                 })}
-
                 <label>Énergie
                     <select value={form.fuel_type || 'Essence'} onChange={function(e) { set('fuel_type', e.target.value) }}>
                         {['Essence','Diesel','Hybride','Électrique','GPL'].map(function(f) { return <option key={f}>{f}</option> })}
                     </select>
                 </label>
-
                 <label>Boîte
                     <select value={form.gearbox || 'Manuelle'} onChange={function(e) { set('gearbox', e.target.value) }}>
                         {['Manuelle','Automatique','DSG','CVT'].map(function(g) { return <option key={g}>{g}</option> })}
                     </select>
                 </label>
-
                 <label className="full-width">Notes
                     <textarea value={form.notes || ''} rows={3}
                         onChange={function(e) { set('notes', e.target.value) }} />
                 </label>
             </div>
 
-            {/* Images — always visible on the form */}
-            <CarImages
-                carId={savedId}
-                onPendingChange={setPendingImagePaths}
-            />
+            <CarImages carId={car ? car.id : null} onPendingChange={setPendingImagePaths} />
 
             <div className="form-actions">
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Enregistrement...' : (car ? 'Enregistrer' : 'Créer')}
+                    {saving ? 'Enregistrement…' : (car ? 'Enregistrer' : 'Créer')}
                 </button>
-                <button onClick={onCancel}>Annuler</button>
+                <button onClick={onCancel} disabled={saving}>Annuler</button>
             </div>
         </div>
     )

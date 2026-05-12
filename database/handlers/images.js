@@ -14,103 +14,67 @@ async function pickImages(win) {
     var result = await dialog.showOpenDialog(win, {
         title: 'Sélectionner des images',
         properties: ['openFile', 'multiSelections'],
-        filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'tiff', 'avif'] }]
+        filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'] }]
     })
-    if (result.canceled) return []
-    return result.filePaths
+    return result.canceled ? [] : result.filePaths
+}
+
+async function previewImages(filePaths) {
+    return filePaths.map(function(fp) {
+        var ext = path.extname(fp).toLowerCase().replace('.', '')
+        var mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
+        var data = fs.readFileSync(fp)
+        return 'data:' + mime + ';base64,' + data.toString('base64')
+    })
 }
 
 async function uploadImages(carId, filePaths) {
     var dir = getImagesDir(carId)
-    var results = []
-
     var maxRow = await get('SELECT MAX(sort_order) as m FROM car_images WHERE car_id=?', [carId])
     var order = (maxRow && maxRow.m !== null) ? maxRow.m + 1 : 0
-
-    var hasPrimary = await get('SELECT id FROM car_images WHERE car_id=? AND is_primary=1', [carId])
-
+    var results = []
     for (var i = 0; i < filePaths.length; i++) {
-        var srcPath = filePaths[i]
-        var ext = path.extname(srcPath).toLowerCase()
+        var ext = path.extname(filePaths[i]).toLowerCase()
         var filename = Date.now() + '_' + i + ext
         var destPath = path.join(dir, filename)
-
-        fs.copyFileSync(srcPath, destPath)
-
-        var isPrimary = (!hasPrimary && i === 0) ? 1 : 0
-
+        fs.copyFileSync(filePaths[i], destPath)
         var row = await run(
-            'INSERT INTO car_images (car_id, filepath, is_primary, sort_order) VALUES (?,?,?,?)', [carId, destPath, isPrimary, order + i]
+            'INSERT INTO car_images (car_id, filepath, sort_order) VALUES (?,?,?)', [carId, destPath, order + i]
         )
-        results.push({ id: row.lastID, filepath: destPath, is_primary: isPrimary, sort_order: order + i })
-        if (isPrimary) hasPrimary = true
+        results.push({ id: row.lastID, filepath: destPath })
     }
-
     return results
 }
 
 async function getCarImages(carId) {
     var rows = await all(
-        'SELECT * FROM car_images WHERE car_id=? ORDER BY sort_order ASC, id ASC', [carId]
-    )
+        'SELECT * FROM car_images WHERE car_id=? ORDER BY sort_order ASC, id ASC', [carId])
     return rows.map(function(r) {
-        return Object.assign({}, r, { url: 'carimg://' + encodeURIComponent(r.filepath) })
+        try {
+            var ext = path.extname(r.filepath).toLowerCase().replace('.', '')
+            var mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+            var data = fs.readFileSync(r.filepath)
+            return Object.assign({}, r, { previewUrl: 'data:' + mime + ';base64,' + data.toString('base64') })
+        } catch (e) {
+            return Object.assign({}, r, { previewUrl: '' })
+        }
     })
-}
-
-async function setCover(carId, imageId) {
-    await run('UPDATE car_images SET is_primary=0 WHERE car_id=?', [carId])
-    await run('UPDATE car_images SET is_primary=1 WHERE id=? AND car_id=?', [imageId, carId])
-    return { success: true }
 }
 
 async function deleteImage(imageId) {
     var row = await get('SELECT * FROM car_images WHERE id=?', [imageId])
-    if (!row) return { success: false, error: 'Not found' }
-
+    if (!row) return { success: false }
     try { fs.unlinkSync(row.filepath) } catch (e) {}
-
     await run('DELETE FROM car_images WHERE id=?', [imageId])
-
-    if (row.is_primary) {
-        var next = await get(
-            'SELECT id FROM car_images WHERE car_id=? ORDER BY sort_order ASC, id ASC LIMIT 1', [row.car_id]
-        )
-        if (next) await run('UPDATE car_images SET is_primary=1 WHERE id=?', [next.id])
-    }
-
     return { success: true }
 }
 
 async function deleteAllCarImages(carId) {
     var rows = await all('SELECT filepath FROM car_images WHERE car_id=?', [carId])
     rows.forEach(function(r) { try { fs.unlinkSync(r.filepath) } catch (e) {} })
-    try {
-        var dir = path.join(app.getPath('userData'), 'car-images', String(carId))
-        fs.rmdirSync(dir)
-    } catch (e) {}
+    try { fs.rmdirSync(path.join(app.getPath('userData'), 'car-images', String(carId))) } catch (e) {}
     await run('DELETE FROM car_images WHERE car_id=?', [carId])
     return { success: true }
 }
 
-async function reorderImages(updates) {
-    for (var i = 0; i < updates.length; i++) {
-        await run('UPDATE car_images SET sort_order=? WHERE id=?', [updates[i].sort_order, updates[i].id])
-    }
-    return { success: true }
-}
-async function previewImages(filePaths) {
-    return filePaths.map(function(fp) {
-        var ext = path.extname(fp).toLowerCase().replace('.', '')
-        var mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' :
-            ext === 'png' ? 'image/png' :
-            ext === 'webp' ? 'image/webp' :
-            ext === 'gif' ? 'image/gif' :
-            ext === 'bmp' ? 'image/bmp' :
-            'image/jpeg'
-        var data = fs.readFileSync(fp)
-        return 'data:' + mime + ';base64,' + data.toString('base64')
-    })
-}
-
-module.exports = { pickImages, uploadImages, getCarImages, setCover, deleteImage, deleteAllCarImages, reorderImages, previewImages }
+module.exports = { pickImages, previewImages, uploadImages, getCarImages, deleteImage, deleteAllCarImages }

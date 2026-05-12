@@ -519,3 +519,141 @@ button {
 .btn-delete-selected:hover {
     background: #dc2626;
 }
+
+
+/* Toast */
+
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    padding: .75rem 1.25rem;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 500;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    animation: slideIn .25s ease;
+}
+
+.toast--success {
+    background: #22c55e;
+}
+
+.toast--error {
+    background: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px)
+    }
+    to {
+        opacity: 1;
+        transform: none
+    }
+}
+
+
+/* Car images */
+
+.ci-wrapper {
+    margin-top: 1.5rem;
+}
+
+.ci-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .75rem;
+}
+
+.ci-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.ci-btn-add {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: .4rem .85rem;
+    cursor: pointer;
+    font-size: .875rem;
+}
+
+.ci-btn-add:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.ci-empty {
+    color: #94a3b8;
+    font-size: .9rem;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.ci-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: .75rem;
+}
+
+.ci-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    aspect-ratio: 4/3;
+}
+
+.ci-card--pending {
+    border-color: #f59e0b;
+}
+
+.ci-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ci-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.ci-del:hover {
+    background: #ef4444;
+}
+
+.ci-pending-label {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: .65rem;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 5px;
+}

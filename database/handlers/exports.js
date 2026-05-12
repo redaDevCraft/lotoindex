@@ -38,7 +38,7 @@ async function getFullCar(id) {
         WHERE c.id = ?`, [id])
     if (!car) return null
     car.attributes = await all('SELECT key, value FROM car_attributes WHERE car_id = ?', [id])
-    car.images = await all('SELECT * FROM car_images WHERE car_id = ? ORDER BY is_primary DESC, sort_order ASC', [id])
+    car.images = await all('SELECT * FROM car_images WHERE car_id = ? ORDER BY sort_order ASC, id ASC', [id])
     return car
 }
 
@@ -251,12 +251,7 @@ function drawImages(doc, images, car) {
                     .text('Image indisponible', tx, ry + tH / 2 - 6, { width: tW, align: 'center', lineBreak: false })
             }
 
-            // Primary badge
-            if (img.is_primary) {
-                doc.rect(tx + 2, ry + 2, 56, 16).fill(C.accent)
-                doc.fillColor(C.white).fontSize(7).font('Helvetica-Bold')
-                    .text('★ COUVERTURE', tx + 5, ry + 5, { lineBreak: false })
-            }
+
         })
 
         doc.y = ry + tH + GAP
