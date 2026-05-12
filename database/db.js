@@ -49,6 +49,15 @@ const SCHEMA = `
     folder_ref      TEXT,
     created_at      TEXT DEFAULT (datetime('now'))
   );
+    CREATE TABLE IF NOT EXISTS car_images (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    car_id     INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,
+    filename   TEXT NOT NULL,
+    filepath   TEXT NOT NULL,
+    is_cover   INTEGER DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
   CREATE TABLE IF NOT EXISTS car_attributes (
     id     INTEGER PRIMARY KEY AUTOINCREMENT,
     car_id INTEGER NOT NULL REFERENCES cars(id),

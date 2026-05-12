@@ -22,4 +22,13 @@ contextBridge.exposeInMainWorld('db', {
     // Export
     exportPDF: function(ids) { return ipcRenderer.invoke('export:pdf', ids) },
     exportExcel: function(ids) { return ipcRenderer.invoke('export:excel', ids) },
+
+    // Images
+    pickImages: function() { return ipcRenderer.invoke('images:pick') },
+    uploadImages: function(carId, paths) { return ipcRenderer.invoke('images:upload', carId, paths) },
+    getCarImages: function(carId) { return ipcRenderer.invoke('images:getAll', carId) },
+    setCoverImage: function(carId, imgId) { return ipcRenderer.invoke('images:setCover', carId, imgId) },
+    deleteImage: function(imgId) { return ipcRenderer.invoke('images:delete', imgId) },
+    deleteAllImages: function(carId) { return ipcRenderer.invoke('images:deleteAll', carId) },
+    reorderImages: function(updates) { return ipcRenderer.invoke('images:reorder', updates) },
 })

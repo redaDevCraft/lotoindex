@@ -1,93 +1,65 @@
 // @ts-nocheck
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
-const { initDB } = require('./../db.js')
-const { seedDatabase } = require('./../seed')
-const carHandlers = require('./../handlers/cars.js')
-const importHandlers = require('./../handlers/imports')
-const exportHandlers = require('./../handlers/exports')
+const { run, get, all } = require('../db')
 
-function createWindow() {
-    const win = new BrowserWindow({
-        width: 1280,
-        height: 800,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false,
+async function getAllCars(filters) {
+    var sql = 'SELECT cars.*, makes.name AS make_name, models.name AS model_name FROM cars LEFT JOIN makes ON cars.make_id = makes.id LEFT JOIN models ON cars.model_id = models.id'
+    var params = []
+    var where = []
+
+    if (filters) {
+        if (filters.make_id) {
+            where.push('cars.make_id = ?');
+            params.push(filters.make_id)
         }
-    })
-
-    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
-        win.loadURL('http://localhost:5173')
-        win.webContents.openDevTools()
-    } else {
-        win.loadFile(path.join(__dirname, '../renderer/dist/index.html'))
+        if (filters.model_id) {
+            where.push('cars.model_id = ?');
+            params.push(filters.model_id)
+        }
+        if (filters.year) {
+            where.push('cars.year = ?');
+            params.push(filters.year)
+        }
+        if (filters.fuel_type) {
+            where.push('cars.fuel_type = ?');
+            params.push(filters.fuel_type)
+        }
+        if (filters.query) {
+            where.push('(makes.name LIKE ? OR models.name LIKE ? OR cars.vin LIKE ? OR cars.registration LIKE ?)')
+            var q = '%' + filters.query + '%'
+            params.push(q, q, q, q)
+        }
     }
+
+    if (where.length > 0) sql += ' WHERE ' + where.join(' AND ')
+    sql += ' ORDER BY cars.id DESC'
+    return await all(sql, params)
 }
 
-app.whenReady().then(async function() {
-
-    await seedDatabase()
-    setupIPC()
-    createWindow()
-})
-
-app.on('window-all-closed', function() {
-    if (process.platform !== 'darwin') app.quit()
-})
-
-function setupIPC() {
-    // ── Cars ──────────────────────────────────────────────
-    ipcMain.handle('cars:getAll', async function(e, filters) {
-        return await carHandlers.getAllCars(filters)
-    })
-    ipcMain.handle('cars:getById', async function(e, id) {
-        return await carHandlers.getCarById(id)
-    })
-    ipcMain.handle('cars:create', async function(e, data) {
-        return await carHandlers.createCar(data)
-    })
-    ipcMain.handle('cars:update', async function(e, id, data) {
-        return await carHandlers.updateCar(id, data)
-    })
-    ipcMain.handle('cars:delete', async function(e, id) {
-        return await carHandlers.deleteCar(id)
-    })
-    ipcMain.handle('cars:search', async function(e, filters) {
-        return await carHandlers.searchCars(filters)
-    })
-
-    // ── Makes & Models ────────────────────────────────────
-    ipcMain.handle('makes:getAll', async function() {
-        return await carHandlers.getMakes()
-    })
-    ipcMain.handle('models:getByMake', async function(e, makeId) {
-        return await carHandlers.getModels(makeId)
-    })
-    ipcMain.handle('submodels:getByModel', async function(e, modelId) {
-        return await carHandlers.getSubmodels(modelId)
-    })
-
-    // ── Import ────────────────────────────────────────────
-    ipcMain.handle('import:pickCSV', async function(e) {
-        const win = BrowserWindow.getFocusedWindow()
-        return await importHandlers.pickCSV(win)
-    })
-    ipcMain.handle('import:previewCSV', async function(e, filePath) {
-        return await importHandlers.previewCSV(filePath)
-    })
-    ipcMain.handle('import:importCSV', async function(e, filePath, mapping) {
-        return await importHandlers.importCSV(filePath, mapping)
-    })
-
-    // ── Export ────────────────────────────────────────────
-    ipcMain.handle('export:pdf', async function(e, ids) {
-        const win = BrowserWindow.getFocusedWindow()
-        return await exportHandlers.exportPDF(win, ids)
-    })
-    ipcMain.handle('export:excel', async function(e, ids) {
-        const win = BrowserWindow.getFocusedWindow()
-        return await exportHandlers.exportExcel(win, ids)
-    })
+async function getCarById(id) {
+    return await get(
+        'SELECT cars.*, makes.name AS make_name, models.name AS model_name FROM cars LEFT JOIN makes ON cars.make_id = makes.id LEFT JOIN models ON cars.model_id = models.id WHERE cars.id = ?', [id]
+    )
 }
+
+async function createCar(data) {
+    var result = await run(
+        'INSERT INTO cars (make_id,model_id,year,vin,registration,reg_date,fuel_type,power_cv,mileage_km,displacement_cc,engine_code,gearbox,internal_type,folder_ref) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [data.make_id || null, data.model_id || null, data.year || null, data.vin || null, data.registration || null, data.reg_date || null, data.fuel_type || null, data.power_cv || null, data.mileage_km || null, data.displacement_cc || null, data.engine_code || null, data.gearbox || null, data.internal_type || null, data.folder_ref || null]
+    )
+    return result.lastID
+}
+
+async function updateCar(id, data) {
+    await run(
+        'UPDATE cars SET make_id=?,model_id=?,year=?,vin=?,registration=?,reg_date=?,fuel_type=?,power_cv=?,mileage_km=?,displacement_cc=?,engine_code=?,gearbox=?,internal_type=?,folder_ref=? WHERE id=?', [data.make_id || null, data.model_id || null, data.year || null, data.vin || null, data.registration || null, data.reg_date || null, data.fuel_type || null, data.power_cv || null, data.mileage_km || null, data.displacement_cc || null, data.engine_code || null, data.gearbox || null, data.internal_type || null, data.folder_ref || null, id]
+    )
+}
+
+async function deleteCar(id) {
+    await run('DELETE FROM car_attributes WHERE car_id = ?', [id])
+    await run('DELETE FROM cars_fts WHERE car_id = ?', [id])
+    await run('DELETE FROM cars WHERE id = ?', [id])
+}
+
+async function searchCars(filters) { return await getAllCars(filters) }
+
+module.exports = { getAllCars, getCarById, createCar, updateCar, deleteCar, searchCars }

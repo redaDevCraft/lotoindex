@@ -344,3 +344,128 @@ button {
 .import-modal th {
     background: #f0f2f5;
 }
+
+
+/* ── Car Images ─────────────────────────────────────── */
+
+.ci-wrapper {
+    margin-top: 1.5rem;
+}
+
+.ci-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.ci-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.ci-btn-add {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: .45rem 1rem;
+    cursor: pointer;
+    font-size: .875rem;
+}
+
+.ci-btn-add:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.ci-no-images {
+    text-align: center;
+    padding: 2.5rem;
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    color: #9ca3af;
+}
+
+.ci-no-images span {
+    font-size: 2.5rem;
+}
+
+.ci-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .75rem;
+}
+
+.ci-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e5e7eb;
+    background: #f9fafb;
+    aspect-ratio: 4/3;
+}
+
+.ci-card--cover {
+    border-color: #2563eb;
+}
+
+.ci-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ci-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: #2563eb;
+    color: #fff;
+    font-size: .7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.ci-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: .25rem;
+    padding: .3rem;
+    background: rgba(0, 0, 0, .45);
+    opacity: 0;
+    transition: opacity .15s;
+}
+
+.ci-card:hover .ci-actions {
+    opacity: 1;
+}
+
+.ci-btn {
+    border: none;
+    border-radius: 4px;
+    padding: .2rem .4rem;
+    cursor: pointer;
+    font-size: .85rem;
+}
+
+.ci-btn--cover {
+    background: #fbbf24;
+}
+
+.ci-btn--delete {
+    background: #ef4444;
+    color: #fff;
+}
+
+.ci-empty {
+    color: #9ca3af;
+    font-size: .875rem;
+    font-style: italic;
+}

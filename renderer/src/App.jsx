@@ -37,6 +37,7 @@ export default function App() {
     const ids = selected.length ? selected : cars.map(c => c.id)
     await window.db.exportExcel(ids)
   }
+  
 
   return (
     <div className="app">
@@ -65,7 +66,9 @@ export default function App() {
               onSelect={setSelected}
               onEdit={(car) => { setEditCar(car); setView('form') }}
               onView={(car) => { setEditCar(car); setView('detail') }}
-              onDelete={async (id) => { await window.db.deleteCar(id); loadCars() }}
+              onDelete={async (id) => { await window.db.deleteCar(id); loadCars()
+              
+               }}
             />
           </>
         )}
@@ -73,13 +76,22 @@ export default function App() {
           <CarForm
             car={editCar}
             makes={makes}
-            onSave={async (data) => {
-              if (editCar) await window.db.updateCar(editCar.id, data)
-              else         await window.db.createCar(data)
-              await loadMakes()
-              await loadCars()
-              setView('list')
-            }}
+         onSave={async function(data) {
+    var id
+    if (editCar) {
+        await window.db.updateCar(editCar.id, data)
+        id = editCar.id
+        await loadMakes()
+        await loadCars()
+        setView('list')   // ← only navigate for edits
+    } else {
+        id = await window.db.createCar(data)
+        await loadMakes()
+        await loadCars()
+        // Don't navigate — CarForm stays open for image upload
+    }
+    return id
+}}
             onCancel={() => setView('list')}
           />
         )}

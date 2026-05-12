@@ -19,12 +19,17 @@ async function getFullCar(id) {
 }
 
 async function exportPDF(ids, win) {
-    const { filePath } = await dialog.showSaveDialog(win, {
+    let { filePath } = await dialog.showSaveDialog(win, {
         title: 'Exporter PDF',
-        defaultPath: `fiches_techniques_${Date.now()}.pdf`,
+        defaultPath: `fiches_${Date.now()}.pdf`,
         filters: [{ name: 'PDF', extensions: ['pdf'] }]
     })
+
     if (!filePath) return { cancelled: true }
+
+    if (!filePath.endsWith('.pdf')) {
+        filePath += '.pdf'
+    }
 
     const doc = new PDFDocument({ margin: 40, size: 'A4' })
     doc.pipe(fs.createWriteStream(filePath))
@@ -87,12 +92,19 @@ async function exportPDF(ids, win) {
 }
 
 async function exportExcel(ids, win) {
-    const { filePath } = await dialog.showSaveDialog(win, {
+    let { filePath } = await dialog.showSaveDialog(win, {
         title: 'Exporter Excel',
         defaultPath: `voitures_${Date.now()}.xlsx`,
         filters: [{ name: 'Excel', extensions: ['xlsx'] }]
     })
+
     if (!filePath) return { cancelled: true }
+
+    if (!filePath.endsWith('.xlsx')) {
+        filePath += '.xlsx'
+    }
+
+    await workbook.xlsx.writeFile(filePath)
 
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Véhicules')

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import CarImages from './CarImages'
 
 export default function CarDetail({ carId, onBack, onEdit }) {
   const [car, setCar] = useState(null)
@@ -45,6 +46,8 @@ export default function CarDetail({ carId, onBack, onEdit }) {
           ))}
         </div>
       )}
+      <CarImages carId={car?.id} />
+
 
       {car.images?.length > 0 && (
         <div className="images-section">

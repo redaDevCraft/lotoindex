@@ -1,11 +1,16 @@
 // @ts-nocheck
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
-const { initDB } = require('../database/db.js')
-const { seedDatabase } = require('../database/seed.js')
-const carHandlers = require('..//database/handlers/cars.js')
-const importHandlers = require('../database/handlers/imports.js')
-const exportHandlers = require('..//database/handlers/exports.js')
+const { initDB } = require('../database/db')
+const { seedDatabase } = require('../database/seed')
+const carHandlers = require('../database/handlers/cars')
+const makesHandlers = require('../database/handlers/makes')
+const importHandlers = require('../database/handlers/imports')
+const exportHandlers = require('../database/handlers/exports')
+const imageHandlers = require('../database/handlers/images')
+const { protocol } = require('electron')
+
+
 
 function createWindow() {
     var win = new BrowserWindow({
@@ -17,7 +22,6 @@ function createWindow() {
             nodeIntegration: false,
         }
     })
-
     if (!app.isPackaged) {
         win.loadURL('http://localhost:5173')
         win.webContents.openDevTools()
@@ -26,11 +30,15 @@ function createWindow() {
     }
 }
 
-app.whenReady().then(function() {
-    initDB() // ← sync, just runs schema
-    seedDatabase() // ← sync, inserts makes/models/submodels once
+app.whenReady().then(async function() {
+    await initDB()
+    await seedDatabase()
     setupIPC()
     createWindow()
+    protocol.registerFileProtocol('carimg', (request, callback) => {
+        const url = request.url.replace('carimg://', '')
+        callback(decodeURIComponent(url))
+    })
 })
 
 app.on('window-all-closed', function() {
@@ -38,20 +46,53 @@ app.on('window-all-closed', function() {
 })
 
 function setupIPC() {
-    ipcMain.handle('cars:getAll', function(e, filters) { return carHandlers.getAllCars(filters) })
-    ipcMain.handle('cars:getById', function(e, id) { return carHandlers.getCarById(id) })
-    ipcMain.handle('cars:create', function(e, data) { return carHandlers.createCar(data) })
-    ipcMain.handle('cars:update', function(e, id, data) { return carHandlers.updateCar(id, data) })
-    ipcMain.handle('cars:delete', function(e, id) { return carHandlers.deleteCar(id) })
-    ipcMain.handle('cars:search', function(e, filters) { return carHandlers.searchCars(filters) })
-    ipcMain.handle('makes:getAll', function() { return carHandlers.getMakes() })
-    ipcMain.handle('models:getByMake', function(e, makeId) { return carHandlers.getModels(makeId) })
-    ipcMain.handle('submodels:getByModel', function(e, modelId) { return carHandlers.getSubmodels(modelId) })
+    // Cars — from cars.js
+    ipcMain.handle('cars:getAll', async function(e, filters) { return await carHandlers.getAllCars(filters) })
+    ipcMain.handle('cars:getById', async function(e, id) { return await carHandlers.getCarById(id) })
+    ipcMain.handle('cars:create', async function(e, data) { return await carHandlers.createCar(data) })
+    ipcMain.handle('cars:update', async function(e, id, data) { return await carHandlers.updateCar(id, data) })
+    ipcMain.handle('cars:delete', async function(e, id) {
+        await imageHandlers.deleteAllCarImages(id) // ← clean images first
+        return await carHandlers.deleteCar(id)
+    })
+    ipcMain.handle('cars:search', async function(e, filters) { return await carHandlers.searchCars(filters) })
 
-    ipcMain.handle('import:pickCSV', function(e) { return importHandlers.pickCSV(BrowserWindow.getFocusedWindow()) })
-    ipcMain.handle('import:previewCSV', function(e, filePath) { return importHandlers.previewCSV(filePath) })
-    ipcMain.handle('import:importCSV', function(e, filePath, mapping) { return importHandlers.importCSV(filePath, mapping) })
+    // Makes — from makes.js
+    ipcMain.handle('makes:getAll', async function() { return await makesHandlers.getAllMakes() })
+    ipcMain.handle('makes:getById', async function(e, id) { return await makesHandlers.getMakeById(id) })
+    ipcMain.handle('makes:create', async function(e, name) { return await makesHandlers.createMake(name) })
+    ipcMain.handle('makes:update', async function(e, id, name) { return await makesHandlers.updateMake(id, name) })
+    ipcMain.handle('makes:delete', async function(e, id) { return await makesHandlers.deleteMake(id) })
 
-    ipcMain.handle('export:pdf', function(e, ids) { return exportHandlers.exportPDF(BrowserWindow.getFocusedWindow(), ids) })
-    ipcMain.handle('export:excel', function(e, ids) { return exportHandlers.exportExcel(BrowserWindow.getFocusedWindow(), ids) })
+    // Models — from makes.js
+    ipcMain.handle('models:getByMake', async function(e, makeId) { return await makesHandlers.getModelsByMake(makeId) })
+    ipcMain.handle('models:getById', async function(e, id) { return await makesHandlers.getModelById(id) })
+    ipcMain.handle('models:create', async function(e, data) { return await makesHandlers.createModel(data) })
+    ipcMain.handle('models:update', async function(e, id, data) { return await makesHandlers.updateModel(id, data) })
+    ipcMain.handle('models:delete', async function(e, id) { return await makesHandlers.deleteModel(id) })
+
+    // Submodels — from makes.js
+    ipcMain.handle('submodels:getByModel', async function(e, modelId) { return await makesHandlers.getSubmodelsByModel(modelId) })
+    ipcMain.handle('submodels:getById', async function(e, id) { return await makesHandlers.getSubmodelById(id) })
+    ipcMain.handle('submodels:create', async function(e, data) { return await makesHandlers.createSubmodel(data) })
+    ipcMain.handle('submodels:update', async function(e, id, data) { return await makesHandlers.updateSubmodel(id, data) })
+    ipcMain.handle('submodels:delete', async function(e, id) { return await makesHandlers.deleteSubmodel(id) })
+
+    // Import
+    ipcMain.handle('import:pickCSV', async function() { return await importHandlers.pickCSV(BrowserWindow.getFocusedWindow()) })
+    ipcMain.handle('import:previewCSV', async function(e, fp) { return await importHandlers.previewCSV(fp) })
+    ipcMain.handle('import:importCSV', async function(e, fp, map) { return await importHandlers.importCSV(fp, map) })
+
+    // Export
+    ipcMain.handle('export:pdf', async function(e, ids) { return await exportHandlers.exportPDF(BrowserWindow.getFocusedWindow(), ids) })
+    ipcMain.handle('export:excel', async function(e, ids) { return await exportHandlers.exportExcel(BrowserWindow.getFocusedWindow(), ids) })
+
+    // ── Images ────────────────────────────────────────────
+    ipcMain.handle('images:pick', async function() { return await imageHandlers.pickImages(BrowserWindow.getFocusedWindow()) })
+    ipcMain.handle('images:upload', async function(e, carId, paths) { return await imageHandlers.uploadImages(carId, paths) })
+    ipcMain.handle('images:getAll', async function(e, carId) { return await imageHandlers.getCarImages(carId) })
+    ipcMain.handle('images:setCover', async function(e, carId, imgId) { return await imageHandlers.setCover(carId, imgId) })
+    ipcMain.handle('images:delete', async function(e, imgId) { return await imageHandlers.deleteImage(imgId) })
+    ipcMain.handle('images:deleteAll', async function(e, carId) { return await imageHandlers.deleteAllCarImages(carId) })
+    ipcMain.handle('images:reorder', async function(e, updates) { return await imageHandlers.reorderImages(updates) })
 }
